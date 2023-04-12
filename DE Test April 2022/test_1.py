@@ -1,3 +1,5 @@
+from datetime import datetime
+
 # [TODO]: step 1
 # Update the is_log_line function below to skip lines that are not valid log lines.
 # Valid log lines have a timestamp, error type, and message. For example, lines 1, 3,
@@ -5,11 +7,46 @@
 # There's no perfect way to do this: just decide what you think is reasonable to get
 # the test to pass. The only thing you are not allowed to do is filter out log lines
 # based on the exact row numbers you want to remove.
-def is_log_line(line):
+
+LOG_LEVELS = ["INFO", "TRACE", "WARNING"]
+INVALID = 'invalid'
+
+def find_log_level(line:str) -> str:
+    """ Returns the LOG LEVEL from string, or empty string if not found """
+    for level in LOG_LEVELS:
+        if level in line:
+            return level
+    return INVALID
+
+def validate_message(message: str) -> str:
+    """ Message validation function for future flexibility """
+    if message[0] != ":":
+        return INVALID
+    return message
+
+def validate_timestamp(tstamp: str) -> str:
+    """ Checks timestamp is correct format """
+    try:
+        dt = datetime.fromtimestamp(tstamp)
+        return tstamp
+    except ValueError:
+        return INVALID
+
+
+def is_log_line(line: str) -> bool:
     """Takes a log line and returns True if it is a valid log line and returns nothing
     if it is not.
     """
-    return True
+    log_level = find_log_level(line)
+    if log_level != INVALID:
+        # timestamp is before error, message is after
+        timestamp = line.split(log_level)[0].strip()
+        message = line.split(log_level)[1].strip()
+
+        if validate_message(message) != INVALID and validate_timestamp(timestamp) != INVALID:
+            return True
+    return False
+    
 
 
 # [TODO]: step 2
