@@ -59,6 +59,13 @@
 ]
 """
 
+import pandas as pd
+import numpy as np
+from pandas import DataFrame
+import requests
+
+API_URL = 'https://courttribunalfinder.service.gov.uk/search/results.json'
+
 # Use this API and the data in people.csv to determine how far each person's nearest
 # desired court is. Generate an output (of whatever format you feel is appropriate)
 # showing, for each person:
@@ -71,4 +78,29 @@
 
 if __name__ == "__main__":
     # [TODO]: write your answer here
-    pass
+    people_in: DataFrame = pd.read_csv('people.csv')
+
+    person_list = people_in.T.to_dict('list')
+    
+    
+    for person in person_list.keys():
+        postcode, court_type = person_list[person][1], person_list[person][2]
+
+        best_court, min_dist = None, np.inf
+
+        possible_courts = requests.get(url=API_URL + f'?postcode={postcode}').json()
+        for court in possible_courts:
+            if court_type in court['types'] and court['distance'] < min_dist:
+                best_court = court
+                min_dist = court['distance']
+        
+        if not best_court is None:
+            person_list[person].append(best_court['name'])
+            person_list[person].append(best_court['dx_number'])
+            person_list[person].append(best_court['distance'])
+    
+    people = pd.DataFrame(data=person_list).T
+    people.columns = ['person_name', 'home_postcode', 'looking_for_court_type', 'court_name', 'court_dx', 'distance']
+    people.to_csv('output.csv')
+            
+

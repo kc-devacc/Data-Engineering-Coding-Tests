@@ -7,4 +7,9 @@
 def sum_current_time(time_str: str) -> int:
     """Expects data in the format HH:MM:SS"""
     list_of_nums = time_str.split(":")
-    return sum(list_of_nums)
+    sum = 0
+    for subsection in list_of_nums:
+        individual_numbers = subsection.split()
+        for num in individual_numbers:
+            sum += int(num)
+    return sum
