@@ -1,4 +1,4 @@
-from datetime import datetime
+import re
 
 # [TODO]: step 1
 # Update the is_log_line function below to skip lines that are not valid log lines.
@@ -8,43 +8,45 @@ from datetime import datetime
 # the test to pass. The only thing you are not allowed to do is filter out log lines
 # based on the exact row numbers you want to remove.
 
+
 LOG_LEVELS = ["INFO", "TRACE", "WARNING"]
 INVALID = 'invalid'
 
-def find_log_level(line:str) -> str:
+def get_valid_log_level(line:str) -> str:
     """ Returns the LOG LEVEL from string, or empty string if not found """
     for level in LOG_LEVELS:
         if level in line:
             return level
     return INVALID
 
-def validate_message(message: str) -> str:
+def get_valid_message(line: str, valid_log:str) -> str:
     """ Message validation function for future flexibility """
-    if message[0] != ":":
+    log_split = line.split(valid_log)
+    message = log_split[1].strip() if len(log_split) > 1 else ""
+
+    if len(message) <= 1 or message[0] != ":":
         return INVALID
     return message
 
-def validate_timestamp(tstamp: str) -> str:
+def get_valid_timestamp(line: str) -> str:
     """ Checks timestamp is correct format """
-    try:
-        dt = datetime.fromtimestamp(tstamp)
-        return tstamp
-    except ValueError:
-        return INVALID
+    my_match = re.findall(r'\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}', line)
+    # We want exactly one match
+    if len(my_match) == 1:
+        return my_match[0]
+    return INVALID
 
 
 def is_log_line(line: str) -> bool:
     """Takes a log line and returns True if it is a valid log line and returns nothing
     if it is not.
     """
-    log_level = find_log_level(line)
-    if log_level != INVALID:
-        # timestamp is before error, message is after
-        timestamp = line.split(log_level)[0].strip()
-        message = line.split(log_level)[1].strip()
+    log_level = get_valid_log_level(line)
+    timestamp = get_valid_timestamp(line)
+    message = get_valid_message(line, log_level)
 
-        if validate_message(message) != INVALID and validate_timestamp(timestamp) != INVALID:
-            return True
+    if log_level != INVALID and timestamp != INVALID and message != INVALID:
+        return True
     return False
     
 
@@ -58,7 +60,14 @@ def get_dict(line):
     """Takes a log line and returns a dict with
     `timestamp`, `log_level`, `message` keys
     """
-    pass
+    if not is_log_line(line):
+        raise ValueError(f"Line given is not a valid line: {line}")
+
+    log = {"timestamp": get_valid_timestamp(line), "log_level": get_valid_log_level(line), 
+           "message": get_valid_message(line, get_valid_log_level(line))}
+    return log
+
+        
 
 
 # YOU DON'T NEED TO CHANGE ANYTHING BELOW THIS LINE
